@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 50
+    MemorySize: 5000
+  Api:
+    BinaryMediaTypes:
+      - image/png
+      - image/jpg
+      - image/jpeg
+
+Resources:
+  ModelMonitorExtension:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      LayerName: model-monitor-extension
+      Description: Python extension for model monitor
+      ContentUri: extensions
+      CompatibleRuntimes:
+        - python3.8  # NOTE: we are using a Python Extension, which can only run in a Python runtime
+      LicenseInfo: MIT-0
+      RetentionPolicy: Delete
+      
+  InferenceFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      PackageType: Image
+      Events:
+        Inference:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /nlp-qa
+            Method: post
+      Architectures:
+        - x86_64
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ModelMonitorBucket
+      Environment:
+        Variables:
+          MODEL_MONITOR_S3_BUCKET: !Ref ModelMonitorBucket
+    Metadata:
+        Dockerfile: Dockerfile
+        DockerContext: ./app
+        DockerTag: python3.8-v1
+      
+  ModelMonitorBucket:
+    Type: AWS::S3::Bucket
+
+    
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  InferenceApi:
+    Description: "API Gateway endpoint URL for Prod stage for Inference function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/nlp-qa"
+  InferenceFunction:
+    Description: "Inference Lambda Function ARN"
+    Value: !GetAtt InferenceFunction.Arn
+  InferenceFunctionIamRole:
+    Description: "Implicit IAM Role created for Inference function"
+    Value: !GetAtt InferenceFunction.Arn

@@ -1,0 +1,26 @@
+config:
+    target: "https://cfftzgcjml.execute-api.us-east-1.amazonaws.com/Prod"
+    phases:
+    - duration: 60
+      arrivalRate: 10
+      name: Warm up load
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: Ramping load
+    - duration: 300
+      arrivalRate: 50
+      rampTo: 100
+      name: Sustained non-peak load, continue ramping
+    - duration: 1200
+      arrivalRate: 100
+      name: Peak load
+scenarios:
+  - name: "Inference Test"
+    flow:
+      - post:
+          url: "/nlp-qa"
+          json:
+            question: "When was the car invented?"
+            context: "Cars came into global use during the 20th century, and developed economies depend on them. The year 1886 is regarded as the birth year of the modern car when German inventor Karl Benz patented his Benz Patent-Motorwagen. Cars became widely available in the early 20th century. One of the first cars accessible to the masses was the 1908 Model T, an American car manufactured by the Ford Motor Company. Cars were rapidly adopted in the US, where they replaced animal-drawn carriages and carts, but took much longer to be accepted in Western Europe and other parts of the world."
+              
