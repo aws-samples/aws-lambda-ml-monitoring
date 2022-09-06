@@ -6,3 +6,4 @@ torchvision==0.9.0+cpu
 pillow
 transformers[torch]==4.1.1
 requests
+pipeline
